@@ -4,11 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
-import { Plus, List, Check, Angry, Trash, ListCheck, Sigma } from "lucide-react";
+import { Plus, List, Check, Angry, Trash, ListCheck, Sigma, SquarePen } from "lucide-react";
 
-import EditTask from "@/components/edit-tasks";
 import ClearTask from "@/components/clear-tasks";
 
 import { getTasks } from "@/actions/get-tasks";
@@ -17,10 +17,14 @@ import { Tasks } from "@/generated/prisma";
 import { addTask } from "@/actions/add-tasks";
 import { delTask } from "@/actions/delete-tasks";
 import { updTasks } from "@/actions/update-tasks";
+import { countAllTasks, countDoneTasks } from "@/actions/count-tasks";
 
 const Home = () => {
     const [taskList, setTaskList] = useState<Tasks[]>([]);
     const [task, setTask] = useState<string>('');
+    const [newText, setNewText] = useState<string>('');
+    const [total, setTotal] = useState(0);
+    const [totalDone, setTotalDone] = useState(0);
 
     const handleGetTasks =  async () => {
         try {
@@ -43,6 +47,7 @@ const Home = () => {
             if (!newValues) return;
             
             await handleGetTasks();
+            await handleCountAll();
             toast.success("Tarefa adicionada com sucesso!");
             setTask('');
         } catch (err) {
@@ -50,9 +55,15 @@ const Home = () => {
         }
     }
 
-    const handleUpdateTask = async (id: string, content: string) => {
+    const handleUpdateTask = async (id: string) => {
         try {
-            // const tasks = await updTasks();
+            if (!id || newText.length == 0 || !newText) return;
+
+            const tasks = await updTasks(id, newText);
+
+            if (!tasks) return;
+
+            await handleGetTasks();
             toast.success("Tarefa atualizada com sucesso!");
         } catch (err) {
             throw err;
@@ -68,16 +79,25 @@ const Home = () => {
             if (!deletedTask) return;
 
             await handleGetTasks();
-
+            await handleCountAll();
             toast.warning("Tarefa deletada com sucesso!");
         } catch (err) {
             throw err;
         }
     }
 
+    async function handleCountAll() {
+        const total = await countAllTasks();
+        const done = await countDoneTasks();
+
+        setTotal(total);
+        setTotalDone(done);
+    }
+
     useEffect(() => {
+        handleCountAll();
         handleGetTasks();
-    }, [])
+    }, []);
 
     return (
         <div className="flex justify-center items-center w-screen h-screen p-5">
@@ -120,7 +140,29 @@ const Home = () => {
                                 </p>
 
                                 <div className="flex gap-1 items-center justify-center">
-                                    <EditTask />
+                                    <Dialog>
+                                        <DialogTrigger asChild>
+                                            <SquarePen size={16} className="cursor-pointer" />
+                                        </DialogTrigger>
+                                        <DialogContent>
+                                            <DialogHeader>
+                                                <DialogTitle>
+                                                    Editar tarefa
+                                                </DialogTitle>
+
+                                                <DialogDescription>
+                                                    Edite uma tarefa colocando sua nova função abaixo:
+                                                </DialogDescription>
+                                            </DialogHeader>
+
+                                            <div className="flex gap-2">
+                                                <Input placeholder="Editar tarefa..." onChange={(e) => {setNewText(e.target.value)}} value={newText} />
+                                                <Button className="cursor-pointer" onClick={() => handleUpdateTask(task.id)}>
+                                                    <SquarePen size={16} className="cursor-pointer" />
+                                                </Button>
+                                            </div>
+                                        </DialogContent>
+                                    </Dialog>
                                     <Trash size={16} className="cursor-pointer" onClick={() => handleDelTask(task.id)} />
                                 </div>
                             </div>
@@ -131,12 +173,12 @@ const Home = () => {
                         <div className="flex items-center gap-2">
                             <ListCheck size={18}/>
                             <p className="text-xs">
-                                Tarefas concluídas (?/?)
+                                Tarefas concluídas ({totalDone}/{total})
                             </p>
 
                         </div>
 
-                        <ClearTask />
+                        <ClearTask total={totalDone} />
                     </div>
 
                     <div className="h-2 w-full bg-gray-100 mt-4 rounded-md">
@@ -146,7 +188,7 @@ const Home = () => {
                     <div className="mt-4 flex justify-end items-center gap-2">
                         <Sigma size={18}/>
                         <p className="text-xs">
-                            ? tarefas no total
+                            {total} tarefas no total
                         </p>
                     </div>
                 </CardContent>

@@ -1,7 +1,8 @@
 import { AlertDialogTrigger, AlertDialog, AlertDialogContent, AlertDialogTitle, AlertDialogHeader, AlertDialogFooter, AlertDialogAction, AlertDialogCancel } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Trash } from "lucide-react";
-const ClearTask = () => {
+
+const ClearTask = ({ total }: { total: number }) => {
     return (
         <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -14,7 +15,7 @@ const ClearTask = () => {
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>
-                        Tem certeza que deseja excluir ? itens?
+                        Tem certeza que deseja excluir {total} itens?
                     </AlertDialogTitle>
                 </AlertDialogHeader>
 
