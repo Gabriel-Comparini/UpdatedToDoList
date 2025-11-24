@@ -18,6 +18,8 @@ import { addTask } from "@/actions/add-tasks";
 import { delTask } from "@/actions/delete-tasks";
 import { updTasks } from "@/actions/update-tasks";
 import { countAllTasks, countDoneTasks } from "@/actions/count-tasks";
+import { updTaskStatus } from "@/actions/toggle-done";
+import EditTask from "../../notusedyet/edit-tasks";
 
 const Home = () => {
     const [taskList, setTaskList] = useState<Tasks[]>([]);
@@ -25,6 +27,7 @@ const Home = () => {
     const [newText, setNewText] = useState<string>('');
     const [total, setTotal] = useState(0);
     const [totalDone, setTotalDone] = useState(0);
+    const [isUpdating, setIsUpdating] = useState(false);
 
     const handleGetTasks =  async () => {
         try {
@@ -86,6 +89,38 @@ const Home = () => {
         }
     }
 
+    const handleToggleTask = async (id: string) => {
+        if(isUpdating) return;
+        setIsUpdating(true);
+        const prevTasks = [...taskList];
+        
+        try {
+            if (!id) return;
+    
+            setTaskList(prev => {
+                const updTasklist = prev.map(task => {
+                    if (task.id === id){
+                        return {
+                            ...task,
+                            done: !task.done
+                        }
+                    } else {
+                        return task;
+                    }
+                });
+                return updTasklist;
+            });
+
+            await updTaskStatus(id);
+        } catch (err) {
+            setTaskList(prevTasks);
+            throw err;
+        } finally {
+            handleCountAll();
+            setIsUpdating(false);
+        }
+    }
+
     async function handleCountAll() {
         const total = await countAllTasks();
         const done = await countDoneTasks();
@@ -135,12 +170,12 @@ const Home = () => {
                             <div className="flex flex-row justify-between items-center h-14 border-t" key={ task.id }>
                                 <div className={`w-1 h-full ${task.done ? 'bg-green-300' : 'bg-red-300'}`}></div>
                                 
-                                <p className="flex-1 px-2">
+                                <p className="flex-1 px-2 cursor-pointer hover:text-gray-700" onClick={() => handleToggleTask(task.id)}>
                                     {task.task}
                                 </p>
 
                                 <div className="flex gap-1 items-center justify-center">
-                                    <Dialog>
+                                    {/* <Dialog>
                                         <DialogTrigger asChild>
                                             <SquarePen size={16} className="cursor-pointer" />
                                         </DialogTrigger>
@@ -162,7 +197,8 @@ const Home = () => {
                                                 </Button>
                                             </div>
                                         </DialogContent>
-                                    </Dialog>
+                                    </Dialog> */}
+                                    <EditTask task={task}/>
                                     <Trash size={16} className="cursor-pointer" onClick={() => handleDelTask(task.id)} />
                                 </div>
                             </div>

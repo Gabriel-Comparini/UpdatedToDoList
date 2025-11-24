@@ -2,8 +2,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SquarePen } from "lucide-react";
+import { Tasks } from "@/generated/prisma";
+import { useState } from "react";
 
-const EditTask = () => {
+type TaskProp = {
+    task: Tasks
+}
+
+const EditTask = ({task} : TaskProp) => {
+    const [tsk, setTsk] = useState<string>(task.task);
     return(
         <Dialog>
             <DialogTrigger asChild>
@@ -17,7 +24,7 @@ const EditTask = () => {
                 </DialogHeader>
 
                 <div className="flex gap-2">
-                    <Input placeholder="Editar tarefa..." />
+                    <Input placeholder="Editar tarefa..." onChange={(e) => {setTsk(e.target.value)}} value={tsk} />
                     <Button className="cursor-pointer">
                         <SquarePen size={16} className="cursor-pointer" />
                     </Button>
